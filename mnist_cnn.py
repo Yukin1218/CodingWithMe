@@ -2,7 +2,11 @@ import numpy as np
 import tensorflow as tf
 import input_data
 
-mnist = input_data.read_data_sets("./repo/MNIST", one_hot = True)
+non_linear = tf.nn.relu
+#non_linear = tf.sigmoid
+learning_rate = 2e-4
+
+mnist = input_data.read_data_sets("../repo/MNIST", one_hot = True)
 imgs = mnist.train.images
 
 def weight_variable(shape):
@@ -20,32 +24,26 @@ def conv2d(x, W):
 def max_pool_2x2(x):
 	return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-activation = tf.nn.relu
-#activation = tf.sigmoid
-learning_rate = 2e-4
-	
+def conv_layer(x, weight_shape):
+	w = weight_variable(weight_shape)
+	b = bias_variable([weight_shape[-1]])
+	return conv2d(x, w) + b
+
 x = tf.placeholder("float", shape=[None, 784])
 # convert to a stack of images
 x_image = tf.reshape(x, [-1, 28, 28, 1])
 
 # conv1
-W_conv1 = weight_variable([5, 5, 1, 32])
-b_conv1 = bias_variable([32])
-h_conv1 = activation(conv2d(x_image, W_conv1) + b_conv1)
-
+z_conv1 = conv_layer(x_image, [5, 5, 1, 32])
+h_conv1 = non_linear(z_conv1)
 # conv_e1
-W_conv_e1 = weight_variable([5, 5, 32, 32])
-b_conv_e1 = bias_variable([32])
-h_conv_e1 = activation(conv2d(h_conv1, W_conv_e1) + b_conv_e1)
-
+z_conv_e1 = conv_layer(h_conv1, [5, 5, 32, 32])
+h_conv_e1 = non_linear(z_conv_e1)
 # max-pool_e1
 h_pool_e1 = max_pool_2x2(h_conv_e1)
-
 # conv2
-W_conv2 = weight_variable([5, 5, 32, 64])
-b_conv2 = bias_variable([64])
-h_conv2 = activation(conv2d(h_pool_e1, W_conv2) + b_conv2)
-
+z_conv2 = conv_layer(h_pool_e1, [5, 5, 32, 64])
+h_conv2 = non_linear(z_conv2)
 # max-pool1
 h_pool2 = max_pool_2x2(h_conv2)
 
@@ -57,7 +55,7 @@ h_pool2_flat = tf.reshape(h_pool2, [-1, final_size])
 
 W_fc1 = weight_variable([final_size, 1024])
 b_fc1 = bias_variable([1024])
-h_fc1 = activation(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+h_fc1 = non_linear(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
 # dropout
 keep_prob = tf.placeholder("float")
